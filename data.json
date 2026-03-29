@@ -5,3 +5,15 @@
     "favorite": true
   }
 ]
+[
+  {
+    "title": "YouTube",
+    "url": "https://youtube.com",
+    "favorite": true
+  },
+  {
+    "title": "ChatGPT",
+    "url": "https://chat.openai.com",
+    "favorite": false
+  }
+]
