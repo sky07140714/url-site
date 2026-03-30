@@ -7,8 +7,7 @@
   <style>
     body { font-family: Arial; margin:0; padding:10px; background:#f2f2f2; }
     h1 { text-align:center; }
-    input { width:95%; padding:12px; margin:10px auto; display:block; font-size:16px; }
-    button { padding:10px; font-size:16px; border:none; border-radius:8px; margin:5px; }
+    input, select { width:95%; padding:12px; margin:10px auto; display:block; font-size:16px; }
     .item { background:white; margin:10px auto; padding:15px; width:95%; border-radius:12px; display:flex; justify-content:space-between; }
     .favorite { border:2px solid gold; }
   </style>
@@ -18,6 +17,9 @@
 <h1>3Dデータ一覧</h1>
 
 <input id="search" placeholder="検索" oninput="search()">
+<select id="categoryFilter" onchange="search()">
+  <option value="">すべて</option>
+</select>
 
 <div id="list"></div>
 
@@ -25,14 +27,25 @@
 let links = [];
 let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
 
-// ====== 読み込み ======
 async function loadData() {
   const res = await fetch("data.json?" + Date.now());
   links = await res.json();
+  setupCategories();
   render();
 }
 
-// ====== 表示 ======
+function setupCategories() {
+  const select = document.getElementById("categoryFilter");
+  const categories = [...new Set(links.map(l => l.category || "未分類"))];
+
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    select.appendChild(option);
+  });
+}
+
 function render(listData = links) {
   const list = document.getElementById("list");
   list.innerHTML = "";
@@ -50,7 +63,8 @@ function render(listData = links) {
     div.innerHTML = `
       <div>
         <b>${isFav?"⭐":""}${link.title}</b><br>
-        <small>${link.url}</small>
+        <small>${link.url}</small><br>
+        <small>📂 ${link.category || "未分類"}</small>
       </div>
       <div>
         <button onclick="window.open('${link.url}')">開く</button>
@@ -62,14 +76,19 @@ function render(listData = links) {
   });
 }
 
-// ====== 検索 ======
 function search() {
   const q = document.getElementById("search").value.toLowerCase();
-  const filtered = links.filter(l=>l.title.toLowerCase().includes(q));
+  const cat = document.getElementById("categoryFilter").value;
+
+  const filtered = links.filter(l => {
+    const matchText = l.title.toLowerCase().includes(q);
+    const matchCat = !cat || (l.category || "未分類") === cat;
+    return matchText && matchCat;
+  });
+
   render(filtered);
 }
 
-// ====== お気に入り ======
 function toggleFavorite(url) {
   if (favorites.includes(url)) {
     favorites = favorites.filter(f=>f!==url);
