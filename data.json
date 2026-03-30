@@ -3,5 +3,20 @@
     "title": "A1/A1 Miniファンカバー",
     "url": "https://makerworld.com/ja/models/64190-a1-a1-mini-fan-cover#profileId-67290",
     "favorite": true
+  },
+  {
+    "title": "YouTube",
+    "url": "https://youtube.com",
+    "favorite": true
+  },
+  {
+    "title": "ChatGPT",
+    "url": "https://chat.openai.com",
+    "favorite": false
+  },
+  {
+    "title": "Google",
+    "url": "https://google.com",
+    "favorite": false
   }
 ]
