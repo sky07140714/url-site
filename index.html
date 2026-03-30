@@ -1,53 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>URLまとめ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3Dデータ一覧</title>
+  <style>
+    body { font-family: Arial; margin:0; padding:10px; background:#f2f2f2; }
+    h1 { text-align:center; }
+    input { width:95%; padding:12px; margin:10px auto; display:block; font-size:16px; }
+    button { padding:10px; font-size:16px; border:none; border-radius:8px; margin:5px; }
+    .item { background:white; margin:10px auto; padding:15px; width:95%; border-radius:12px; display:flex; justify-content:space-between; }
+    .favorite { border:2px solid gold; }
+    .addBtn { background:#2196F3; color:white; width:95%; }
+  </style>
 </head>
 <body>
 
-<h1>URLまとめ</h1>
+<h1>3Dデータ一覧</h1>
 
 <input id="search" placeholder="検索" oninput="search()">
+<button class="addBtn" onclick="addLink()">＋追加（管理者）</button>
+
 <div id="list"></div>
 
 <script>
-let links = [];
+// ====== 設定 ======
+const TOKEN = "ここにGitHubトークン";
+const OWNER = "sky07140714";
+const REPO = "url-site";
+const FILE_PATH = "data.json";
+const ADMIN_PASS = "1234";
 
-// データ読み込み
+let links = [];
+let favorites = JSON.parse(localStorage.getItem("favorites") || "[]");
+
+// ====== 読み込み ======
 async function loadData() {
-  const res = await fetch("data.json");
+  const res = await fetch("data.json?" + Date.now());
   links = await res.json();
   render();
 }
 
-// 表示
+// ====== 表示 ======
 function render(listData = links) {
   const list = document.getElementById("list");
   list.innerHTML = "";
 
-  // お気に入り優先
-  listData.sort((a, b) => b.favorite - a.favorite);
+  listData.sort((a,b)=>{
+    return (favorites.includes(b.url)) - (favorites.includes(a.url));
+  });
 
-  listData.forEach(link => {
+  listData.forEach(link=>{
+    const isFav = favorites.includes(link.url);
+
     const div = document.createElement("div");
+    div.className = "item " + (isFav ? "favorite" : "");
 
     div.innerHTML = `
-      <a href="${link.url}" target="_blank">${link.title}</a>
-      ${link.favorite ? "⭐" : ""}
+      <div>
+        <b>${isFav?"⭐":""}${link.title}</b><br>
+        <small>${link.url}</small>
+      </div>
+      <div>
+        <button onclick="window.open('${link.url}')">開く</button>
+        <button onclick="toggleFavorite('${link.url}')">★</button>
+      </div>
     `;
 
     list.appendChild(div);
   });
 }
 
-// 検索
+// ====== 検索 ======
 function search() {
   const q = document.getElementById("search").value.toLowerCase();
-  const filtered = links.filter(l =>
-    l.title.toLowerCase().includes(q)
-  );
-  render(filtered);
+  render(links.filter(l=>l.title.toLowerCase().includes(q)));
+}
+
+// ====== お気に入り ======
+function toggleFavorite(url) {
+  if (favorites.includes(url)) {
+    favorites = favorites.filter(f=>f!==url);
+  } else {
+    favorites.push(url);
+  }
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  render();
+}
+
+// ====== 管理者チェック ======
+function isAdmin() {
+  return prompt("管理者パスワード") === ADMIN_PASS;
+}
+
+// ====== GitHub更新 ======
+async function updateGitHub(newData) {
+  const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`);
+  const file = await res.json();
+
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(newData, null, 2))));
+
+  await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE_PATH}`, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${TOKEN}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      message: "update links",
+      content: content,
+      sha: file.sha
+    })
+  });
+}
+
+// ====== 追加 ======
+async function addLink() {
+  if (!isAdmin()) return alert("権限なし");
+
+  const title = prompt("タイトル");
+  let url = prompt("URL");
+
+  if (!title || !url) return;
+  if (!url.startsWith("http")) url = "https://" + url;
+
+  links.push({ title, url });
+
+  await updateGitHub(links);
+
+  alert("追加完了！数秒後に反映される");
+  loadData();
 }
 
 loadData();
