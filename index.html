@@ -61,17 +61,21 @@ function render(listData = links) {
     div.className = "item " + (isFav ? "favorite" : "");
 
     div.innerHTML = `
-      <div>
-        <b>${isFav?"⭐":""}${link.title}</b><br>
-        <small>${link.url}</small><br>
-        <small>📂 ${link.category || "未分類"}</small>
-      </div>
-      <div>
-        <button onclick="window.open('${link.url}')">開く</button>
-        <button onclick="toggleFavorite('${link.url}')">★</button>
-      </div>
-    `;
+  <div style="display:flex; gap:10px; align-items:center;">
+    <img src="${link.image}" style="width:80px;height:80px;object-fit:cover;border-radius:10px;">
+    
+    <div>
+      <b>${isFav?"⭐":""}${link.title}</b><br>
+      <small>${link.url}</small><br>
+      <small>📂 ${link.category || "未分類"}</small>
+    </div>
+  </div>
 
+  <div>
+    <button onclick="window.open('${link.url}')">開く</button>
+    <button onclick="toggleFavorite('${link.url}')">★</button>
+  </div>
+`;
     list.appendChild(div);
   });
 }
